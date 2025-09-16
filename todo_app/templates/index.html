@@ -52,7 +52,7 @@
               {% endif %}
             </div>
             {% if task.description %}
-              <div class="task-body">{{ task.description | replace('\n', '<br>') | safe }}</div>
+              <div class="task-body">{{ task.description }}</div>
             {% else %}
               <div class="task-body muted">暂无描述</div>
             {% endif %}
