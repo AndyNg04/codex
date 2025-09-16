@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}任务清单 - 网页版{% endblock %}
+
+{% block content %}
+  <section>
+    <h2>任务列表</h2>
+    <form class="filter-form" method="get" action="{{ url_for('index') }}">
+      <div>
+        <label for="search">搜索关键词</label>
+        <input
+          id="search"
+          type="text"
+          name="q"
+          placeholder="按标题或描述搜索"
+          value="{{ search }}"
+        >
+      </div>
+      <div>
+        <label for="status">筛选状态</label>
+        <select id="status" name="status">
+          <option value="all" {% if status == 'all' %}selected{% endif %}>全部任务</option>
+          <option value="active" {% if status == 'active' %}selected{% endif %}>进行中</option>
+          <option value="completed" {% if status == 'completed' %}selected{% endif %}>已完成</option>
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="secondary">应用筛选</button>
+      </div>
+      {% if search or status != 'all' %}
+        <div>
+          <a class="button-link button-secondary" href="{{ url_for('index') }}">清除筛选</a>
+        </div>
+      {% endif %}
+    </form>
+
+    {% if tasks %}
+      <ul class="task-list">
+        {% for task in tasks %}
+          <li class="task-card{% if task.completed %} completed{% endif %}{% if task.is_overdue() %} overdue{% endif %}">
+            <div class="task-header">
+              <h3>{{ task.title }}</h3>
+              <span class="status-pill">{{ task.status_label() }}</span>
+            </div>
+            <div class="task-meta">
+              <span>创建于 {{ task.created_at.replace('T', ' ') }}</span>
+              <span>更新于 {{ task.updated_at.replace('T', ' ') }}</span>
+              {% if task.due_date %}
+                <span>截止 {{ task.due_date }}</span>
+              {% else %}
+                <span>无截止日期</span>
+              {% endif %}
+            </div>
+            {% if task.description %}
+              <div class="task-body">{{ task.description | replace('\n', '<br>') | safe }}</div>
+            {% else %}
+              <div class="task-body muted">暂无描述</div>
+            {% endif %}
+            <div class="task-actions">
+              <form method="post" action="{{ url_for('update_status', task_id=task.id) }}">
+                <input type="hidden" name="state" value="{{ 'active' if task.completed else 'completed' }}">
+                <input type="hidden" name="q" value="{{ search }}">
+                <input type="hidden" name="status" value="{{ status }}">
+                <button type="submit" class="secondary">
+                  {{ '标记进行中' if task.completed else '标记完成' }}
+                </button>
+              </form>
+              <a class="button-link button-secondary" href="{{ url_for('index', edit=task.id, q=search, status=status) }}">
+                编辑
+              </a>
+              <form method="post" action="{{ url_for('delete_task', task_id=task.id) }}" onsubmit="return confirm('确定要删除该任务吗？');">
+                <input type="hidden" name="q" value="{{ search }}">
+                <input type="hidden" name="status" value="{{ status }}">
+                <button type="submit" class="danger">删除</button>
+              </form>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        <h3>暂无任务</h3>
+        <p>使用右侧的「新建任务」表单快速添加待办事项。</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <aside>
+    <h2>新建任务</h2>
+    <form method="post" action="{{ url_for('create_task') }}">
+      <div>
+        <label for="title">任务标题</label>
+        <input id="title" name="title" type="text" required placeholder="例如：整理会议记录">
+      </div>
+      <div>
+        <label for="due_date">截止日期</label>
+        <input id="due_date" name="due_date" type="date" pattern="\d{4}-\d{2}-\d{2}">
+      </div>
+      <div>
+        <label for="description">任务描述</label>
+        <textarea id="description" name="description" placeholder="补充任务细节或分解步骤"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit">添加任务</button>
+      </div>
+    </form>
+
+    {% if edit_task %}
+      <hr>
+      <h2>编辑任务</h2>
+      <form method="post" action="{{ url_for('update_task', task_id=edit_task.id) }}">
+        <input type="hidden" name="q" value="{{ search }}">
+        <input type="hidden" name="status" value="{{ status }}">
+        <div>
+          <label for="edit-title">任务标题</label>
+          <input id="edit-title" name="title" type="text" required value="{{ edit_task.title }}">
+        </div>
+        <div>
+          <label for="edit-due">截止日期</label>
+          <input id="edit-due" name="due_date" type="date" value="{{ edit_task.due_date or '' }}">
+        </div>
+        <div>
+          <label for="edit-description">任务描述</label>
+          <textarea id="edit-description" name="description">{{ edit_task.description }}</textarea>
+        </div>
+        <label class="inline-checkbox">
+          <input type="checkbox" name="completed" value="1" {% if edit_task.completed %}checked{% endif %}>
+          标记为已完成
+        </label>
+        <div class="form-actions">
+          <button type="submit">保存修改</button>
+          <a class="button-link button-secondary" href="{{ url_for('index', q=search, status=status) }}">取消编辑</a>
+        </div>
+      </form>
+    {% endif %}
+  </aside>
+{% endblock %}
