@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <title>{% block title %}任务清单{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+        background: #f3f4f6;
+        color: #111827;
+      }
+
+      header {
+        background: linear-gradient(135deg, #1f2937, #111827);
+        color: #ffffff;
+        padding: 1.6rem 0;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 16px rgba(17, 24, 39, 0.35);
+      }
+
+      header .container {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+      }
+
+      header h1 {
+        font-size: clamp(1.6rem, 3vw, 2.2rem);
+        font-weight: 700;
+        margin: 0;
+      }
+
+      header p {
+        margin: 0;
+        opacity: 0.85;
+      }
+
+      main.container {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 1.5rem 3rem;
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1.1fr);
+        gap: 1.5rem;
+      }
+
+      @media (max-width: 960px) {
+        main.container {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      section,
+      aside {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 18px 35px -24px rgba(15, 23, 42, 0.6);
+      }
+
+      h2 {
+        margin-top: 0;
+        margin-bottom: 1rem;
+        font-size: 1.35rem;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      label {
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+
+      input[type="text"],
+      input[type="date"],
+      textarea,
+      select {
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        padding: 0.65rem 0.75rem;
+        font-size: 1rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        width: 100%;
+      }
+
+      textarea {
+        min-height: 140px;
+        resize: vertical;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+      }
+
+      button,
+      .button-link {
+        background: #4f46e5;
+        border: none;
+        color: #ffffff;
+        padding: 0.55rem 1.1rem;
+        border-radius: 999px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+      }
+
+      button.secondary,
+      .button-secondary {
+        background: #e5e7eb;
+        color: #1f2937;
+      }
+
+      button.danger {
+        background: #dc2626;
+      }
+
+      button:hover,
+      .button-link:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px -12px rgba(79, 70, 229, 0.9);
+      }
+
+      button.secondary:hover,
+      .button-secondary:hover {
+        box-shadow: 0 12px 24px -12px rgba(55, 65, 81, 0.5);
+      }
+
+      button.danger:hover {
+        box-shadow: 0 12px 24px -12px rgba(220, 38, 38, 0.7);
+      }
+
+      .flash-messages {
+        grid-column: 1 / -1;
+        list-style: none;
+        margin: 0 0 1.2rem 0;
+        padding: 0;
+      }
+
+      .flash-messages li {
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        margin-bottom: 0.65rem;
+        font-weight: 600;
+      }
+
+      .flash-success {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .flash-error {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+
+      .flash-info {
+        background: #e0f2fe;
+        color: #075985;
+      }
+
+      ul.task-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .task-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), #ffffff);
+        border-radius: 16px;
+        padding: 1.2rem;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        position: relative;
+      }
+
+      .task-card.completed {
+        opacity: 0.65;
+      }
+
+      .task-card.overdue::before {
+        content: "已超期";
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+        color: #dc2626;
+        background: rgba(220, 38, 38, 0.12);
+      }
+
+      .task-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.65rem;
+      }
+
+      .task-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+
+      .task-meta {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        font-size: 0.92rem;
+        color: #6b7280;
+      }
+
+      .task-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .status-pill {
+        padding: 0.2rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(99, 102, 241, 0.15);
+        color: #4338ca;
+        font-size: 0.78rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .task-body {
+        line-height: 1.6;
+        font-size: 0.98rem;
+        color: #374151;
+        word-break: break-word;
+      }
+
+      .task-body.muted {
+        color: #9ca3af;
+        font-style: italic;
+      }
+
+      .inline-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-weight: 500;
+      }
+
+      .inline-checkbox input[type="checkbox"] {
+        width: 1.1rem;
+        height: 1.1rem;
+      }
+
+      .filter-form {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        margin-bottom: 1.25rem;
+        align-items: end;
+      }
+
+      .filter-form button {
+        width: 100%;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        border: 2px dashed #d1d5db;
+        border-radius: 16px;
+        color: #6b7280;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      hr {
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        margin: 2rem 0 1.5rem;
+      }
+
+      footer {
+        margin-top: 2.5rem;
+        text-align: center;
+        font-size: 0.85rem;
+        color: #6b7280;
+      }
+    </style>
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <div>
+          <h1>任务清单管理</h1>
+          <p>使用简洁的网页界面集中管理待办事项。</p>
+        </div>
+        <div>
+          {% block header_actions %}{% endblock %}
+        </div>
+      </div>
+    </header>
+    <main class="container">
+      {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+          <ul class="flash-messages">
+            {% for category, message in messages %}
+              <li class="flash-{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+    <footer>
+      任务数据会自动保存在当前用户主目录下的 <code>.todo_app_data.json</code> 文件中。
+    </footer>
+  </body>
+</html>
